@@ -204,34 +204,85 @@ public class MusicPlayer implements Runnable
     {
         synchronized (decodedAudioInputStream)
         {
-            sourceDataLine.start();
-            byte[] data = new byte[4096];
-            int nBytesRead = 0, nBytesWritten = 0;
-            while (nBytesRead != -1)
+            try
             {
-                try
+                sourceDataLine.start();
+                byte[] data = new byte[4096 * 10];
+                int nBytesRead = 0, nBytesWritten = 0;
+                while (nBytesRead != -1 && status != STOPPED && status != UNKNOWN)
                 {
-                    nBytesRead = decodedAudioInputStream.read(data, 0, data.length);
+                    if (status == PLAYING)
+                    {
+                        nBytesRead = decodedAudioInputStream.read(data, 0, data.length);
+                        if (nBytesRead != -1) nBytesWritten = sourceDataLine.write(data, 0, nBytesRead);
+                    }
+                    else if (status == PAUSED)
+                    {
+                        Thread.sleep(1000);
+                    }
                 }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-                if (nBytesRead != -1) nBytesWritten = sourceDataLine.write(data, 0, nBytesRead);
             }
-            sourceDataLine.drain();
-            sourceDataLine.stop();
-            sourceDataLine.close();
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
         }
     }
 
-    protected void play()
+    public void play()
     {
         initialization();
         openLine();
         musicThread = new Thread(this, "MusicPlayer");
         musicThread.start();
+        logger.info("Music Start");
         status = PLAYING;
+    }
+
+    public void pause()
+    {
+        if (sourceDataLine != null)
+        {
+            if (status == PLAYING)
+            {
+                logger.info("Music Paused");
+                status = PAUSED;
+            }
+        }
+    }
+
+    public void resume()
+    {
+        if (sourceDataLine != null)
+        {
+            if (status == PAUSED)
+            {
+                logger.info("Music Resume");
+                status = PLAYING;
+            }
+        }
+    }
+
+    public void stop()
+    {
+        if (sourceDataLine != null)
+        {
+            if (status == PLAYING || status == PAUSED)
+            {
+                sourceDataLine.flush();
+                sourceDataLine.stop();
+                status = STOPPED;
+                logger.info("Music Stopped");
+                synchronized (decodedAudioInputStream)
+                {
+                    closeStream();
+                }
+            }
+        }
     }
 
     protected void closeStream()
