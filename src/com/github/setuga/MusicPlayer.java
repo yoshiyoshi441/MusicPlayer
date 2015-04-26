@@ -2,30 +2,33 @@ package com.github.setuga;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.tritonus.share.sampled.file.TAudioFileFormat;
 
 import javax.sound.sampled.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MusicPlayer implements Runnable
 {
-
-    static protected Logger logger = LogManager.getLogger(MusicPlayer.class);
-
-    protected Thread musicThread = null;
-    protected Object object;
-    protected AudioInputStream musicAudioInputStream;
-    protected AudioInputStream decodedAudioInputStream;
-    protected AudioFileFormat musicAudioFileFormat;
-
-    protected SourceDataLine sourceDataLine;
 
     public static final int UNKNOWN = -1;
     public static final int PLAYING = 0;
     public static final int PAUSED = 1;
     public static final int STOPPED = 2;
+
+    public Map map = new HashMap();
+
+    protected Logger logger = LogManager.getLogger(MusicPlayer.class);
+    protected Thread musicThread = null;
+    protected Object object;
+    protected AudioInputStream musicAudioInputStream;
+    protected AudioInputStream decodedAudioInputStream;
+    protected AudioFileFormat musicAudioFileFormat;
+    protected SourceDataLine sourceDataLine;
 
     private int status = UNKNOWN;
 
@@ -106,6 +109,41 @@ public class MusicPlayer implements Runnable
             initialization((URL) object);
         }
         createLine();
+        Map properties = null;
+        if (musicAudioFileFormat instanceof TAudioFileFormat)
+        {
+            properties = ((TAudioFileFormat) musicAudioFileFormat).properties();
+            if (properties != null)
+            {
+                map.put("duration", properties.get("duration"));
+                map.put("title", properties.get("title"));
+                map.put("author", properties.get("author"));
+                map.put("album", properties.get("album"));
+                map.put("date", properties.get("date"));
+                map.put("copyright", properties.get("copyright"));
+                map.put("mp3.version.mpeg", properties.get("mp3.version.mpeg"));
+                map.put("mp3.version.layer", properties.get("mp3.version.layer"));
+                map.put("mp3.version.encoding", properties.get("mp3.version.encoding"));
+                map.put("mp3.channels", properties.get("mp3.channels"));
+                map.put("mp3.frequency.hz", properties.get("mp3.frequency.hz"));
+                map.put("mp3.bitrate.nominal.bps", properties.get("mp3.bitrate.nominal.bps"));
+                map.put("mp3.length.bytes", properties.get("mp3.length.bytes"));
+                map.put("mp3.length.frames", properties.get("mp3.length.frames"));
+                map.put("mp3.framesize.bytes", properties.get("mp3.framesize.bytes"));
+                map.put("mp3.framerate.fps", properties.get("mp3.framerate.fps"));
+                map.put("mp3.header.pos", properties.get("mp3.header.pos"));
+                map.put("mp3.vbr", properties.get("mp3.vbr"));
+                map.put("mp3.vbr.scale", properties.get("mp3.vbr.scale"));
+                map.put("mp3.crc", properties.get("mp3.crc"));
+                map.put("mp3.original", properties.get("mp3.original"));
+                map.put("mp3.copyright", properties.get("mp3.copyright"));
+                map.put("mp3.padding", properties.get("mp3.padding"));
+                map.put("mp3.mode", properties.get("mp3.mode"));
+                map.put("mp3.id3tag.genre", properties.get("mp3.id3tag.genre"));
+                map.put("mp3.id3tag.track", properties.get("mp3.id3tag.track"));
+                map.put("mp3.id3tag.v2", properties.get("mp3.id3tag.v2"));
+            }
+        }
     }
 
     protected void initialization(File file)
@@ -221,6 +259,9 @@ public class MusicPlayer implements Runnable
                         Thread.sleep(1000);
                     }
                 }
+                sourceDataLine.drain();
+                sourceDataLine.stop();
+                sourceDataLine.close();
             }
             catch (IOException e)
             {
@@ -273,11 +314,10 @@ public class MusicPlayer implements Runnable
         {
             if (status == PLAYING || status == PAUSED)
             {
-                sourceDataLine.flush();
                 sourceDataLine.stop();
                 status = STOPPED;
                 logger.info("Music Stopped");
-                synchronized (decodedAudioInputStream)
+                synchronized (musicAudioInputStream)
                 {
                     closeStream();
                 }
@@ -287,11 +327,11 @@ public class MusicPlayer implements Runnable
 
     protected void closeStream()
     {
-        if (decodedAudioInputStream != null)
+        if (musicAudioInputStream != null)
         {
             try
             {
-                decodedAudioInputStream.close();
+                musicAudioInputStream.close();
             }
             catch (IOException e)
             {
