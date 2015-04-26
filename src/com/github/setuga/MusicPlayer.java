@@ -20,8 +20,6 @@ public class MusicPlayer implements Runnable
     public static final int PAUSED = 1;
     public static final int STOPPED = 2;
 
-    public Map map = new HashMap();
-
     protected Logger logger = LogManager.getLogger(MusicPlayer.class);
     protected Thread musicThread = null;
     protected Object object;
@@ -30,6 +28,7 @@ public class MusicPlayer implements Runnable
     protected AudioFileFormat musicAudioFileFormat;
     protected SourceDataLine sourceDataLine;
 
+    private Map map = new HashMap();
     private int status = UNKNOWN;
 
     public MusicPlayer()
@@ -41,6 +40,11 @@ public class MusicPlayer implements Runnable
     public int getStatus()
     {
         return status;
+    }
+
+    public Object getProperties(String key)
+    {
+        return map.get(key);
     }
 
     public void open(String path)
