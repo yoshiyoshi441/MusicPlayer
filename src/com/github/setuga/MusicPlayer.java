@@ -125,6 +125,7 @@ public class MusicPlayer implements Runnable
                 map.put("album", properties.get("album"));
                 map.put("date", properties.get("date"));
                 map.put("copyright", properties.get("copyright"));
+                map.put("comment", properties.get("comment"));
                 map.put("mp3.version.mpeg", properties.get("mp3.version.mpeg"));
                 map.put("mp3.version.layer", properties.get("mp3.version.layer"));
                 map.put("mp3.version.encoding", properties.get("mp3.version.encoding"));
@@ -145,7 +146,15 @@ public class MusicPlayer implements Runnable
                 map.put("mp3.mode", properties.get("mp3.mode"));
                 map.put("mp3.id3tag.genre", properties.get("mp3.id3tag.genre"));
                 map.put("mp3.id3tag.track", properties.get("mp3.id3tag.track"));
+                map.put("mp3.id3tag.encoded", properties.get("mp3.id3tag.encoded"));
+                map.put("mp3.id3tag.composer", properties.get("mp3.id3tag.composer"));
+                map.put("mp3.id3tag.grouping", properties.get("mp3.id3tag.grouping"));
+                map.put("mp3.id3tag.disc", properties.get("mp3.id3tag.disc"));
+                map.put("mp3.id3tag.publisher", properties.get("mp3.id3tag.publisher"));
+                map.put("mp3.id3tag.orchestra", properties.get("mp3.id3tag.orchestra"));
+                map.put("mp3.id3tag.length", properties.get("mp3.id3tag.length"));
                 map.put("mp3.id3tag.v2", properties.get("mp3.id3tag.v2"));
+                map.put("mp3.id3tag.v2.version", properties.get("mp3.id3tag.v2.version"));
             }
         }
     }
