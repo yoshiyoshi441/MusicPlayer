@@ -26,9 +26,10 @@ public class MusicPlayer implements Runnable
     protected AudioInputStream musicAudioInputStream;
     protected AudioInputStream decodedAudioInputStream;
     protected AudioFileFormat musicAudioFileFormat;
+    protected FloatControl gainControl;
     protected SourceDataLine sourceDataLine;
+    protected Map map = new HashMap();
 
-    private Map map = new HashMap();
     private int status = UNKNOWN;
 
     public MusicPlayer()
@@ -96,6 +97,7 @@ public class MusicPlayer implements Runnable
         }
         musicAudioInputStream = null;
         musicAudioFileFormat = null;
+        gainControl = null;
     }
 
     protected void initialization()
@@ -248,6 +250,10 @@ public class MusicPlayer implements Runnable
                 e.printStackTrace();
             }
             logger.info("Open Line BufferSize : " + bufferSize);
+            if (sourceDataLine.isControlSupported(FloatControl.Type.MASTER_GAIN))
+            {
+                gainControl = (FloatControl) sourceDataLine.getControl(FloatControl.Type.MASTER_GAIN);
+            }
         }
     }
 
@@ -275,6 +281,7 @@ public class MusicPlayer implements Runnable
                 sourceDataLine.drain();
                 sourceDataLine.stop();
                 sourceDataLine.close();
+                closeStream();
             }
             catch (IOException e)
             {
@@ -335,6 +342,55 @@ public class MusicPlayer implements Runnable
                     closeStream();
                 }
             }
+        }
+    }
+
+    public float getValue()
+    {
+        if (sourceDataLine.isControlSupported(FloatControl.Type.MASTER_GAIN))
+        {
+            return gainControl.getValue();
+        }
+        else
+        {
+            return 0.0F;
+        }
+    }
+
+    public float getMinGain()
+    {
+        if (sourceDataLine.isControlSupported(FloatControl.Type.MASTER_GAIN))
+        {
+            return gainControl.getMinimum();
+        }
+        else
+        {
+            return 0.0F;
+        }
+    }
+
+    public float getMaxGain()
+    {
+        if (sourceDataLine.isControlSupported(FloatControl.Type.MASTER_GAIN))
+        {
+            return gainControl.getMaximum();
+        }
+        else
+        {
+            return 0.0F;
+        }
+    }
+
+    public void setGain(Float gain)
+    {
+        if (sourceDataLine.isControlSupported(FloatControl.Type.MASTER_GAIN))
+        {
+            gainControl.setValue(gain);
+            logger.info("");
+        }
+        else
+        {
+            logger.info("MasterGain is Not Supported");
         }
     }
 
