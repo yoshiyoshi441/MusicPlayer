@@ -386,7 +386,6 @@ public class MusicPlayer implements Runnable
         if (sourceDataLine.isControlSupported(FloatControl.Type.MASTER_GAIN))
         {
             gainControl.setValue(gain);
-            logger.info("");
         }
         else
         {

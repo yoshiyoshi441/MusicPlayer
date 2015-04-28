@@ -2,7 +2,7 @@
 
 Create to Bullshit
 
-# Sample code:  
+## Sample code:  
 
 ```java
 MusicPlayer musicPlayer = new MusicPlayer();
