@@ -281,7 +281,6 @@ public class MusicPlayer implements Runnable
                 sourceDataLine.drain();
                 sourceDataLine.stop();
                 sourceDataLine.close();
-                closeStream();
             }
             catch (IOException e)
             {
@@ -296,6 +295,10 @@ public class MusicPlayer implements Runnable
 
     public void play()
     {
+        if (status == PLAYING)
+        {
+            stop();
+        }
         initialization();
         openLine();
         musicThread = new Thread(this, "MusicPlayer");
