@@ -1,10 +1,18 @@
-package com.github.setuga;
+package com.github.setuga.musicplayer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.tritonus.share.sampled.file.TAudioFileFormat;
 
-import javax.sound.sampled.*;
+import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.FloatControl;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,15 +28,15 @@ public class MusicPlayer implements Runnable
     public static final int PAUSED = 1;
     public static final int STOPPED = 2;
 
-    protected Logger logger = LogManager.getLogger(MusicPlayer.class);
-    protected Thread musicThread = null;
-    protected Object object;
-    protected AudioInputStream musicAudioInputStream;
-    protected AudioInputStream decodedAudioInputStream;
-    protected AudioFileFormat musicAudioFileFormat;
-    protected FloatControl gainControl;
-    protected SourceDataLine sourceDataLine;
-    protected Map map = new HashMap();
+    private Logger logger = LogManager.getLogger(MusicPlayer.class);
+    private Thread musicThread = null;
+    private Object object;
+    private AudioInputStream musicAudioInputStream;
+    private AudioInputStream decodedAudioInputStream;
+    private AudioFileFormat musicAudioFileFormat;
+    private FloatControl gainControl;
+    private SourceDataLine sourceDataLine;
+    private Map map = new HashMap();
 
     private int status = UNKNOWN;
 
@@ -50,7 +58,7 @@ public class MusicPlayer implements Runnable
 
     public void open(String path)
     {
-        logger.info("open(" + path + ")");
+        logger.info("Open(" + path + ")");
         File file = new File(path);
         if (file != null)
         {
@@ -60,7 +68,7 @@ public class MusicPlayer implements Runnable
 
     public void open(File file)
     {
-        logger.info("open(" + file + ")");
+        logger.info("Open(" + file + ")");
         if (file != null)
         {
             object = file;
@@ -69,7 +77,7 @@ public class MusicPlayer implements Runnable
 
     public void open(InputStream inputStream)
     {
-        logger.info("open(" + inputStream + ")");
+        logger.info("Open(" + inputStream + ")");
         if (inputStream != null)
         {
             object = inputStream;
@@ -78,7 +86,7 @@ public class MusicPlayer implements Runnable
 
     public void open(URL url)
     {
-        logger.info("open(" + url + ")");
+        logger.info("Open(" + url + ")");
         if (url != null)
         {
             object = url;
