@@ -38,10 +38,12 @@ public class MusicPlayer implements Runnable
     private final Map<String, Object> map = new HashMap<>();
 
     private int status = UNKNOWN;
+    private boolean loop;
 
     public MusicPlayer()
     {
         object = null;
+        loop = false;
         reset();
     }
 
@@ -77,7 +79,7 @@ public class MusicPlayer implements Runnable
         status = UNKNOWN;
         if (musicAudioInputStream != null)
         {
-            closeStream();
+            closeAudioInputStream();
         }
         musicAudioInputStream = null;
         musicAudioFileFormat = null;
@@ -98,7 +100,6 @@ public class MusicPlayer implements Runnable
         {
             initialization((URL) object);
         }
-        createLine();
         Map<String, Object> properties;
         if (musicAudioFileFormat instanceof TAudioFileFormat)
         {
@@ -186,7 +187,7 @@ public class MusicPlayer implements Runnable
 
     private void createLine()
     {
-        logger.info("Create Line");
+        logger.info("Create SourceDataLine");
         AudioFormat baseAudioFormat = musicAudioFileFormat.getFormat();
         int sampleSizeInBits = baseAudioFormat.getSampleSizeInBits();
         if (sampleSizeInBits <= 0) sampleSizeInBits = 16;
@@ -202,9 +203,9 @@ public class MusicPlayer implements Runnable
         {
             e.printStackTrace();
         }
-        logger.info("Line : " + sourceDataLine.toString());
-        logger.info("Line Info : " + info.toString());
-        logger.info("Line Format : " + audioFormat);
+        logger.info("SourceDataLine : " + sourceDataLine.toString());
+        logger.info("SourceDataLine Info : " + info.toString());
+        logger.info("SourceDataLine Format : " + audioFormat);
     }
 
     private void openLine()
@@ -221,7 +222,7 @@ public class MusicPlayer implements Runnable
             {
                 e.printStackTrace();
             }
-            logger.info("Open Line BufferSize : " + bufferSize);
+            logger.info("Open SourceDataLine BufferSize : " + bufferSize);
             if (sourceDataLine.isControlSupported(FloatControl.Type.MASTER_GAIN))
             {
                 gainControl = (FloatControl) sourceDataLine.getControl(FloatControl.Type.MASTER_GAIN);
@@ -233,28 +234,61 @@ public class MusicPlayer implements Runnable
     {
         try
         {
-            sourceDataLine.start();
-            byte[] data = new byte[4096 * 10];
-            int nBytesRead = 0, nBytesWritten = 0;
-            while (nBytesRead != -1 && status != STOPPED && status != UNKNOWN)
+            do
             {
-                if (status == PLAYING)
-                {
-                    nBytesRead = decodedAudioInputStream.read(data, 0, data.length);
-                    if (nBytesRead != -1) nBytesWritten = sourceDataLine.write(data, 0, nBytesRead);
-                }
-                else if (status == PAUSED)
-                {
-                    Thread.sleep(1000);
-                }
-            }
-            sourceDataLine.drain();
-            sourceDataLine.stop();
-            sourceDataLine.close();
+                createLine();
+                openLine();
+                loop();
+            } while (loop && status == PLAYING);
+            status = STOPPED;
         }
         catch (IOException | InterruptedException e)
         {
             e.printStackTrace();
+        }
+    }
+
+    private void loop() throws IOException, InterruptedException
+    {
+        sourceDataLine.start();
+        byte[] data = new byte[4096 * 10];
+        int nBytesRead = 0, nBytesWritten = 0;
+        while (nBytesRead != -1 && status != STOPPED && status != UNKNOWN)
+        {
+            if (status == PLAYING)
+            {
+                nBytesRead = decodedAudioInputStream.read(data, 0, data.length);
+                if (nBytesRead != -1) nBytesWritten = sourceDataLine.write(data, 0, nBytesRead);
+            }
+            else if (status == PAUSED)
+            {
+                Thread.sleep(1000);
+            }
+        }
+        closeSourceDataLine();
+    }
+
+    private void closeSourceDataLine()
+    {
+        sourceDataLine.drain();
+        sourceDataLine.stop();
+        sourceDataLine.close();
+        logger.info("SourceDataLine Closed");
+    }
+
+    private void closeAudioInputStream()
+    {
+        if (musicAudioInputStream != null)
+        {
+            try
+            {
+                musicAudioInputStream.close();
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+            logger.info("AudioInputStream Closed");
         }
     }
 
@@ -265,7 +299,6 @@ public class MusicPlayer implements Runnable
             stop();
         }
         initialization();
-        openLine();
         Thread musicThread = new Thread(this, "MusicPlayer");
         musicThread.start();
         logger.info("Music Start");
@@ -296,7 +329,7 @@ public class MusicPlayer implements Runnable
         }
     }
 
-    private void stop()
+    public void stop()
     {
         if (sourceDataLine != null)
         {
@@ -305,7 +338,7 @@ public class MusicPlayer implements Runnable
                 sourceDataLine.stop();
                 status = STOPPED;
                 logger.info("Music Stopped");
-                closeStream();
+                closeAudioInputStream();
             }
         }
     }
@@ -328,6 +361,7 @@ public class MusicPlayer implements Runnable
         }
         else
         {
+            logger.info("MasterGain is Not Supported");
             return 0.0F;
         }
     }
@@ -340,6 +374,7 @@ public class MusicPlayer implements Runnable
         }
         else
         {
+            logger.info("MasterGain is Not Supported");
             return 0.0F;
         }
     }
@@ -352,8 +387,15 @@ public class MusicPlayer implements Runnable
         }
         else
         {
+            logger.info("MasterGain is Not Supported");
             return 0.0F;
         }
+    }
+
+    public void setLoop(boolean loop)
+    {
+        this.loop = loop;
+        logger.info("Loop has been to " + this.loop);
     }
 
     public void setGain(Float gain)
@@ -365,22 +407,6 @@ public class MusicPlayer implements Runnable
         else
         {
             logger.info("MasterGain is Not Supported");
-        }
-    }
-
-    private void closeStream()
-    {
-        if (musicAudioInputStream != null)
-        {
-            try
-            {
-                musicAudioInputStream.close();
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-            logger.info("AudioInputStream Closed");
         }
     }
 
