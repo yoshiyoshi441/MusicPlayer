@@ -238,7 +238,7 @@ public class MusicPlayer implements Runnable
             {
                 createLine();
                 openLine();
-                loop();
+                playBack();
             } while (loop && status == PLAYING);
             status = STOPPED;
         }
@@ -248,7 +248,7 @@ public class MusicPlayer implements Runnable
         }
     }
 
-    private void loop() throws IOException, InterruptedException
+    private void playBack() throws IOException, InterruptedException
     {
         sourceDataLine.start();
         byte[] data = new byte[4096 * 10];
