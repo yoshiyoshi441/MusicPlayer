@@ -28,15 +28,14 @@ public class MusicPlayer implements Runnable
     public static final int PAUSED = 1;
     public static final int STOPPED = 2;
 
-    private Logger logger = LogManager.getLogger(MusicPlayer.class);
-    private Thread musicThread = null;
+    private final Logger logger = LogManager.getLogger(MusicPlayer.class);
     private Object object;
     private AudioInputStream musicAudioInputStream;
     private AudioInputStream decodedAudioInputStream;
     private AudioFileFormat musicAudioFileFormat;
     private FloatControl gainControl;
     private SourceDataLine sourceDataLine;
-    private Map map = new HashMap();
+    private final Map<String, Object> map = new HashMap<>();
 
     private int status = UNKNOWN;
 
@@ -44,26 +43,6 @@ public class MusicPlayer implements Runnable
     {
         object = null;
         reset();
-    }
-
-    public int getStatus()
-    {
-        return status;
-    }
-
-    public Object getProperties(String key)
-    {
-        return map.get(key);
-    }
-
-    public void open(String path)
-    {
-        logger.info("Open(" + path + ")");
-        File file = new File(path);
-        if (file != null)
-        {
-            object = file;
-        }
     }
 
     public void open(File file)
@@ -93,22 +72,19 @@ public class MusicPlayer implements Runnable
         }
     }
 
-    protected void reset()
+    private void reset()
     {
         status = UNKNOWN;
         if (musicAudioInputStream != null)
         {
-            synchronized (musicAudioInputStream)
-            {
-                closeStream();
-            }
+            closeStream();
         }
         musicAudioInputStream = null;
         musicAudioFileFormat = null;
         gainControl = null;
     }
 
-    protected void initialization()
+    private void initialization()
     {
         if (object instanceof File)
         {
@@ -123,10 +99,10 @@ public class MusicPlayer implements Runnable
             initialization((URL) object);
         }
         createLine();
-        Map properties = null;
+        Map<String, Object> properties;
         if (musicAudioFileFormat instanceof TAudioFileFormat)
         {
-            properties = ((TAudioFileFormat) musicAudioFileFormat).properties();
+            properties = musicAudioFileFormat.properties();
             if (properties != null)
             {
                 map.put("duration", properties.get("duration"));
@@ -169,58 +145,46 @@ public class MusicPlayer implements Runnable
         }
     }
 
-    protected void initialization(File file)
+    private void initialization(File file)
     {
         try
         {
             musicAudioInputStream = AudioSystem.getAudioInputStream(file);
             musicAudioFileFormat = AudioSystem.getAudioFileFormat(file);
         }
-        catch (UnsupportedAudioFileException e)
-        {
-            e.printStackTrace();
-        }
-        catch (IOException e)
+        catch (UnsupportedAudioFileException | IOException e)
         {
             e.printStackTrace();
         }
     }
 
-    protected void initialization(InputStream inputStream)
+    private void initialization(InputStream inputStream)
     {
         try
         {
             musicAudioInputStream = AudioSystem.getAudioInputStream(inputStream);
             musicAudioFileFormat = AudioSystem.getAudioFileFormat(inputStream);
         }
-        catch (UnsupportedAudioFileException e)
-        {
-            e.printStackTrace();
-        }
-        catch (IOException e)
+        catch (UnsupportedAudioFileException | IOException e)
         {
             e.printStackTrace();
         }
     }
 
-    protected void initialization(URL url)
+    private void initialization(URL url)
     {
         try
         {
             musicAudioInputStream = AudioSystem.getAudioInputStream(url);
             musicAudioFileFormat = AudioSystem.getAudioFileFormat(url);
         }
-        catch (UnsupportedAudioFileException e)
-        {
-            e.printStackTrace();
-        }
-        catch (IOException e)
+        catch (UnsupportedAudioFileException | IOException e)
         {
             e.printStackTrace();
         }
     }
 
-    protected void createLine()
+    private void createLine()
     {
         logger.info("Create Line");
         AudioFormat baseAudioFormat = musicAudioFileFormat.getFormat();
@@ -243,7 +207,7 @@ public class MusicPlayer implements Runnable
         logger.info("Line Format : " + audioFormat);
     }
 
-    protected void openLine()
+    private void openLine()
     {
         if (sourceDataLine != null)
         {
@@ -267,37 +231,30 @@ public class MusicPlayer implements Runnable
 
     public void run()
     {
-        synchronized (decodedAudioInputStream)
+        try
         {
-            try
+            sourceDataLine.start();
+            byte[] data = new byte[4096 * 10];
+            int nBytesRead = 0, nBytesWritten = 0;
+            while (nBytesRead != -1 && status != STOPPED && status != UNKNOWN)
             {
-                sourceDataLine.start();
-                byte[] data = new byte[4096 * 10];
-                int nBytesRead = 0, nBytesWritten = 0;
-                while (nBytesRead != -1 && status != STOPPED && status != UNKNOWN)
+                if (status == PLAYING)
                 {
-                    if (status == PLAYING)
-                    {
-                        nBytesRead = decodedAudioInputStream.read(data, 0, data.length);
-                        if (nBytesRead != -1) nBytesWritten = sourceDataLine.write(data, 0, nBytesRead);
-                    }
-                    else if (status == PAUSED)
-                    {
-                        Thread.sleep(1000);
-                    }
+                    nBytesRead = decodedAudioInputStream.read(data, 0, data.length);
+                    if (nBytesRead != -1) nBytesWritten = sourceDataLine.write(data, 0, nBytesRead);
                 }
-                sourceDataLine.drain();
-                sourceDataLine.stop();
-                sourceDataLine.close();
+                else if (status == PAUSED)
+                {
+                    Thread.sleep(1000);
+                }
             }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-            catch (InterruptedException e)
-            {
-                e.printStackTrace();
-            }
+            sourceDataLine.drain();
+            sourceDataLine.stop();
+            sourceDataLine.close();
+        }
+        catch (IOException | InterruptedException e)
+        {
+            e.printStackTrace();
         }
     }
 
@@ -309,7 +266,7 @@ public class MusicPlayer implements Runnable
         }
         initialization();
         openLine();
-        musicThread = new Thread(this, "MusicPlayer");
+        Thread musicThread = new Thread(this, "MusicPlayer");
         musicThread.start();
         logger.info("Music Start");
         status = PLAYING;
@@ -339,7 +296,7 @@ public class MusicPlayer implements Runnable
         }
     }
 
-    public void stop()
+    private void stop()
     {
         if (sourceDataLine != null)
         {
@@ -348,12 +305,19 @@ public class MusicPlayer implements Runnable
                 sourceDataLine.stop();
                 status = STOPPED;
                 logger.info("Music Stopped");
-                synchronized (musicAudioInputStream)
-                {
-                    closeStream();
-                }
+                closeStream();
             }
         }
+    }
+
+    public int getStatus()
+    {
+        return status;
+    }
+
+    public Object getProperties(String key)
+    {
+        return map.get(key);
     }
 
     public float getValue()
@@ -404,7 +368,7 @@ public class MusicPlayer implements Runnable
         }
     }
 
-    protected void closeStream()
+    private void closeStream()
     {
         if (musicAudioInputStream != null)
         {
