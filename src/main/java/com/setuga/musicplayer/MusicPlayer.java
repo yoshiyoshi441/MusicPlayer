@@ -1,4 +1,4 @@
-package com.github.setuga.musicplayer;
+package com.setuga.musicplayer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -155,7 +155,7 @@ public class MusicPlayer implements Runnable
         }
         catch (UnsupportedAudioFileException | IOException e)
         {
-            e.printStackTrace();
+            logger.error(e);
         }
     }
 
@@ -168,7 +168,7 @@ public class MusicPlayer implements Runnable
         }
         catch (UnsupportedAudioFileException | IOException e)
         {
-            e.printStackTrace();
+            logger.error(e);
         }
     }
 
@@ -181,7 +181,7 @@ public class MusicPlayer implements Runnable
         }
         catch (UnsupportedAudioFileException | IOException e)
         {
-            e.printStackTrace();
+            logger.error(e);
         }
     }
 
@@ -201,7 +201,7 @@ public class MusicPlayer implements Runnable
         }
         catch (LineUnavailableException e)
         {
-            e.printStackTrace();
+            logger.error(e);
         }
         logger.info("SourceDataLine : " + sourceDataLine.toString());
         logger.info("SourceDataLine Info : " + info.toString());
@@ -220,7 +220,7 @@ public class MusicPlayer implements Runnable
             }
             catch (LineUnavailableException e)
             {
-                e.printStackTrace();
+                logger.error(e);
             }
             logger.info("Open SourceDataLine BufferSize : " + bufferSize);
             if (sourceDataLine.isControlSupported(FloatControl.Type.MASTER_GAIN))
@@ -244,7 +244,7 @@ public class MusicPlayer implements Runnable
         }
         catch (IOException | InterruptedException e)
         {
-            e.printStackTrace();
+            logger.error(e);
         }
     }
 
@@ -286,7 +286,7 @@ public class MusicPlayer implements Runnable
             }
             catch (IOException e)
             {
-                e.printStackTrace();
+                logger.error(e);
             }
             logger.info("AudioInputStream Closed");
         }
