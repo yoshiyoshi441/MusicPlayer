@@ -14,6 +14,10 @@ log4j-api-2.2.jar
 ```java
 MusicPlayer musicPlayer = new MusicPlayer();
 musicPlayer.open(new File("path"));
+
+// if you want to be able to loop playback, you use code below 
+musicPlayer.setLoop(true);
+
 musicPlayer.play();
 
 System.out.println(musicPlayer.getStatus());
